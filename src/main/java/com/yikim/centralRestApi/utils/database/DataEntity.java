@@ -5,11 +5,27 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "TEST_CONNECT_TAB")
 public class DataEntity {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "NAME_")
     private String name;
 
     @Column(name = "CONNECT")
     private boolean connect;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isConnect() {
+        return connect;
+    }
+
+    public void setConnect(boolean connect) {
+        this.connect = connect;
+    }
 }
