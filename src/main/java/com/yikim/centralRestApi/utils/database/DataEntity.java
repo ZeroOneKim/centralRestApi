@@ -2,6 +2,9 @@ package com.yikim.centralRestApi.utils.database;
 
 import jakarta.persistence.*;
 
+/**
+ * Database Connect 테스트.
+ */
 @Entity
 @Table(name = "TEST_CONNECT_TAB")
 public class DataEntity {
