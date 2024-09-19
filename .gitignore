@@ -34,3 +34,4 @@ build/
 
 ##  ADD  ##
 application.properties
+SecurityInfo.java
