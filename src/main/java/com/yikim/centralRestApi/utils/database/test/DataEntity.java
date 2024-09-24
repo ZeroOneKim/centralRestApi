@@ -1,4 +1,4 @@
-package com.yikim.centralRestApi.utils.database;
+package com.yikim.centralRestApi.utils.database.test;
 
 import jakarta.persistence.*;
 
