@@ -1,0 +1,3 @@
+spring.datasource.url=jdbc:mysql://[IP]:[Port]/[Database]?serverTimezone=Asia/Seoul
+spring.datasource.username=[ID]
+spring.datasource.password=[Password]
