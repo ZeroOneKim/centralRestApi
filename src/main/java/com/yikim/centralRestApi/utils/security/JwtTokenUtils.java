@@ -4,9 +4,11 @@ package com.yikim.centralRestApi.utils.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
+@Service
 public class JwtTokenUtils {
     @Autowired
     private SecurityInfo securityInfo;
