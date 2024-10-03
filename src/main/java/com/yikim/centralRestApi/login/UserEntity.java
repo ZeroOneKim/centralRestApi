@@ -1,8 +1,10 @@
 package com.yikim.centralRestApi.login;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.CurrentTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -10,22 +12,28 @@ import java.time.LocalDateTime;
 @Table(name = "SY_USER_MT")
 public class UserEntity {
     @Id
-    private String user_id;
+    @Column(name = "USER_ID")
+    private String userId;
 
+    @Column(name = "EMAIL")
     private String email;
+    @Column(name = "ROLE")
     private String role;
+    @Column(name = "PASSWORD")
     private String password;
+    @Column(name = "CREATED_AT")
+    private LocalDateTime createdAt;
+    @Column(name = "ACCOUNT_STATUS")
+    private String accountStatus;
+    @Column(name = "FAILED_CNT")
+    private int failedCnt;
 
-    private LocalDateTime create_at;
-    private String account_status;
-    private int failed_cnt;
 
-
-    public String getUser_id() {
-        return user_id;
+    public String getUserId() {
+        return userId;
     }
-    public void setUser_id(String user_id) {
-        this.user_id = user_id;
+    public void setUser_id(String userId) {
+        this.userId = userId;
     }
 
     public String getEmail() {
@@ -49,24 +57,24 @@ public class UserEntity {
         this.password = password;
     }
 
-    public LocalDateTime getCreate_at() {
-        return create_at;
+    public LocalDateTime getCreateAt() {
+        return createdAt;
     }
-    public void setCreate_at(LocalDateTime create_at) {
-        this.create_at = create_at;
-    }
-
-    public String getAccount_status() {
-        return account_status;
-    }
-    public void setAccount_status(String account_status) {
-        this.account_status = account_status;
+    public void setCreateAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public int getFailed_cnt() {
-        return failed_cnt;
+    public String getAccountStatus() {
+        return accountStatus;
     }
-    public void setFailed_cnt(int failed_cnt) {
-        this.failed_cnt = failed_cnt;
+    public void setAccountStatus(String accountStatus) {
+        this.accountStatus = accountStatus;
+    }
+
+    public int getFailedCnt() {
+        return failedCnt;
+    }
+    public void setFailedCnt(int failedCnt) {
+        this.failedCnt = failedCnt;
     }
 }
