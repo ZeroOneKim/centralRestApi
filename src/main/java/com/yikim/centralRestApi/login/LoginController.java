@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -38,13 +39,13 @@ public class LoginController {
     @PostMapping("/api/auth/login-process")
     public ResponseEntity<?> login(@RequestBody UserEntity userEntity) {
         try{
-            UserEntity userObject = userRepository.findByUserId(userEntity.getUserId());
-            if(userObject == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자가 존재하지 않음.");
+            Optional<UserEntity> userObject = userRepository.findByUserId(userEntity.getUserId());
+            if(!userObject.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자가 존재하지 않음.");
 
             return Optional.ofNullable(userEntity)
-                    .filter(userE -> userE.getPassword().equals(userObject.getPassword())) //TODO Password Encoding
+                    .filter(userE -> userE.getPassword().equals(userObject.get().getPassword())) //TODO Password Encoding
                     .map(userE -> {
-                        String jwtToken = jwtTokenUtils.makeToken(userObject.getUserId());
+                        String jwtToken = jwtTokenUtils.makeToken(userObject.get().getUserId());
 
                         System.out.println("token    : " + jwtToken);   //TODO DEL
                         System.out.println("jwtToken : " + ResponseEntity.ok().body(jwtToken));  //TODO DEL
@@ -62,23 +63,21 @@ public class LoginController {
      * 회원가입 처리 메서드(운영자만 사용)
      *
      * @param userEntity : 사용자 정보객체
-     * @param securityForSignUpPassCode : api 추가 패스워드
      * @return HTTP body
      */
     @PostMapping("/api/auth/secret/signup")
-    public ResponseEntity<?> signUp(@RequestBody UserEntity userEntity, String securityForSignUpPassCode) {
-        if(securityForSignUpPassCode != securityInfo.getSignUpSecureKeyVal()) {
-            //TODO : GET IP INFO
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("부적합한 접근.");
-        }
-        if(userRepository.findByUserId(userEntity.getUserId()) != null
-                || userRepository.findByUserId(userEntity.getUserId()).equals(userEntity.getUserId())) {
+    public ResponseEntity<?> signUp(@RequestBody UserEntity userEntity) {
+        //TODO To admin
+        Optional<UserEntity> existingUser = userRepository.findByUserId(userEntity.getUserId());
+
+        if(existingUser.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("InValid UserId");
         }
         //나만 쓸껀데 검증이 필요할까.?
         try {
             userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
             userEntity.setCreateAt(LocalDateTime.now());
+
             userRepository.save(userEntity);
             return ResponseEntity.ok().body("OK.");
         } catch (Exception e) {
