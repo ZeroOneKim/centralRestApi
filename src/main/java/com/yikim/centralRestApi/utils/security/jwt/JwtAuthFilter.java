@@ -29,6 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     /**
      * JWT 토큰 추출, 인증처리 메서드
+     * Authorization : Bearer [jwt token]
      *
      * @param request 클라이언트 측 HTTP 요청
      * @param response HTTP 응답
