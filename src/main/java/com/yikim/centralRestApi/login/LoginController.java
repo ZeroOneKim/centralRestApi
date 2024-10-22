@@ -26,9 +26,6 @@ public class LoginController {
     @Autowired UserRepository userRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtTokenUtils jwtTokenUtils;
-    @Autowired LoginUtilService loginUtilService;
-    @Autowired
-    SecurityInfo securityInfo;
 
     /**
      * login 인증 프로세스
@@ -43,12 +40,12 @@ public class LoginController {
             if(!userObject.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자가 존재하지 않음.");
 
             return Optional.ofNullable(userEntity)
-                    .filter(userE -> userE.getPassword().equals(userObject.get().getPassword())) //TODO Password Encoding
+                    .filter(userE ->
+                               passwordEncoder.matches(userE.getPassword(), userObject.get().getPassword()))
                     .map(userE -> {
                         String jwtToken = jwtTokenUtils.makeToken(userObject.get().getUserId());
 
                         System.out.println("token    : " + jwtToken);   //TODO DEL
-                        System.out.println("jwtToken : " + ResponseEntity.ok().body(jwtToken));  //TODO DEL
 
                         return ResponseEntity.ok().body(jwtToken);
                     })
