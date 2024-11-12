@@ -1,25 +1,23 @@
 package com.yikim.centralRestApi.utils.database.test;
 
-import jakarta.persistence.*;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 /**
  * Database Connect 테스트.
  */
-@Entity
-@Table(name = "TEST_CONNECT_TAB")
+@Table("TEST_CONNECT_TAB")
 public class DataEntity {
-
     @Id
-    @Column(name = "NAME_")
+    @Column("NAME_")
     private String name;
-
-    @Column(name = "CONNECT")
     private boolean connect;
 
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -27,7 +25,6 @@ public class DataEntity {
     public boolean isConnect() {
         return connect;
     }
-
     public void setConnect(boolean connect) {
         this.connect = connect;
     }
