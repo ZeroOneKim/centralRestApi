@@ -1,31 +1,15 @@
 package com.yikim.centralRestApi.login;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import org.hibernate.annotations.CurrentTimestamp;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "SY_USER_MT")
 public class UserEntity {
-    @Id
-    @Column(name = "USER_ID")
     private String userId;
-
-    @Column(name = "EMAIL")
     private String email;
-    @Column(name = "ROLE")
     private String role;
-    @Column(name = "PASSWORD")
     private String password;
-    @Column(name = "CREATED_AT")
     private LocalDateTime createdAt;
-    @Column(name = "ACCOUNT_STATUS")
     private String accountStatus;
-    @Column(name = "FAILED_CNT")
     private int failedCnt;
 
 
