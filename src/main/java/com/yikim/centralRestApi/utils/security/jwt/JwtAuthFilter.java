@@ -13,13 +13,14 @@ import java.util.ArrayList;
 
 /**
  * JWT 토큰에 대한 인증 처리 클래스(유효성 검사 -> 인증처리 여부 확인)
- * 매 요청마다 실행. {@code Authorization} 헤더에서 JWT 토큰 추출 후, 사용자 인증 수행
+ * 매 요청마다 실행. Authorization 헤더에서 JWT 토큰 추출 후, 사용자 인증 수행
  *
  * @Version : 0.91
  * @Since   : 2024-10-08
  * @Author  : KRM)김영일
  *
  * @Modified : 2024-11-11 - WebFlux 버전으로 변경
+ * @Modified : 2024-11-15 - {@Component}로 등록 시 필터가 Spring 기본 체인과 Security 체인에서 중복 호출되는 문제 발생 => Security 체인에서만 필터가 호출되도록 변경
  */
 public class JwtAuthFilter implements WebFilter {
     private JwtTokenUtils jwtTokenUtils;
