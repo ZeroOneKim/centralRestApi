@@ -11,30 +11,49 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.Optional;
 
+/**
+ * JWT 토큰을 생성등의 유틸 클래스
+ *
+ * @Version : 9.1
+ * @Since   : 2024-11-08
+ * @Author  : 김영일
+ */
 @Service
 public class JwtTokenUtils {
     @Autowired
     private SecurityInfo securityInfo;
 
+    /**
+     * JWT 토근 생성 메서드
+     *
+     * @param user : 사용자 정보
+     * @return jwt 토큰
+     */
     public String makeToken(String user) {
         return Jwts.builder()
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + (1000*3600)*12 ))
-                .setSubject(user)
+                .setIssuedAt(new Date()) // 토큰 발행시간
+                .setExpiration(new Date(System.currentTimeMillis() + (1000*3600)*12 )) //유효시간
+                .setSubject(user) //정보 설정
                 .signWith(SignatureAlgorithm.HS256, securityInfo.getRateOfOneSecretKeyValue())
                 .compact();
     }
 
+    /**
+     * JWT 토큰에서 사용자 추출하는 메서드.
+     * ※주의 : 없을 경우에는 NULL을 반환함. NPE 방어코드 유의
+     *
+     * @param token : JWT
+     * @return User Information
+     */
     public String extractUser(String token) {
         try {
             Claims claims = Jwts.parser()
                     .setSigningKey(securityInfo.getRateOfOneSecretKeyValue()).build()
                     .parseClaimsJws(token)
                     .getBody();
-            return claims.getSubject(); // 사용자의 username이 Subject에 설정되었다고 가정
+            return claims.getSubject();
         } catch (Exception e) {
-            e.printStackTrace();
-            return null; // 사용자 정보를 추출하지 못하면 null 반환
+            return null;
         }
     }
 
