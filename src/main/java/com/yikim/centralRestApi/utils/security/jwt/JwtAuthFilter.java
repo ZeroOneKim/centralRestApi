@@ -49,7 +49,6 @@ public class JwtAuthFilter implements WebFilter {
                 String username = jwtTokenUtils.extractUser(jwtToken);
 
                 if (username != null) {
-                    System.out.println("JWT Token is valid, username: " + username);  // 로그 추가
                     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>()); //TODO Auth 관리
 
                     return chain.filter(exchange)
