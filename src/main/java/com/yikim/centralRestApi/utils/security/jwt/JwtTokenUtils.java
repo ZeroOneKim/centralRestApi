@@ -3,6 +3,7 @@ package com.yikim.centralRestApi.utils.security.jwt;
 
 import com.yikim.centralRestApi.utils.security.SecurityInfo;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,11 +53,19 @@ public class JwtTokenUtils {
                     .parseClaimsJws(token)
                     .getBody();
             return claims.getSubject();
-        } catch (Exception e) {
+        } catch (JwtException e) {
             return null;
         }
     }
+    public boolean isValidJWT(String token) {
+        try {
+            extractUser(token);
 
+            return true;
+        } catch (JwtException e) {
+            return false;
+        }
+    }
     /**
      * JWT 응답시, 헤더의 유효성 체크
      * @param header Bearer <jwt ~> 형태

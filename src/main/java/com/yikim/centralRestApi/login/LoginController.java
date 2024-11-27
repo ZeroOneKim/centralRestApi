@@ -1,25 +1,25 @@
 package com.yikim.centralRestApi.login;
 
-import com.yikim.centralRestApi.utils.security.SecurityInfo;
 import com.yikim.centralRestApi.utils.security.jwt.JwtTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.boot.web.server.Cookie;
+import org.springframework.http.*;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * 로그인 인증처리 유효성 확인 후 jwt 토큰을 return 한다.
+ * 로그인 인증처리
  *
  * @Version : 0.9
  * @Since : 2024-10-07
  * @Author : 김영일
+ *
+ * @Modified : 2024-11-20 - WebFlux 버전으로 변경
  */
 @RestController
 public class LoginController {
@@ -34,27 +34,34 @@ public class LoginController {
      * @return jwt 토큰
      */
     @PostMapping("/api/auth/login-process")
-    public ResponseEntity<?> login(@RequestBody UserEntity userEntity) {
-        try{
-            Optional<UserEntity> userObject = userRepository.findByUserId(userEntity.getUserId());
-            if(!userObject.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("사용자가 존재하지 않음.");
+    public Mono<ResponseEntity<String>> login(@RequestBody UserEntity userEntity) {
+        return userRepository.findByUserId(userEntity.getUserId())
+                .flatMap(userObject -> {
+                    // 패스워드 일치 여부 확인
+                    if (!passwordEncoder.matches(userEntity.getPassword(), userObject.getPassword())) {
+                        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잘못된 인증"));
+                    }
 
-            return Optional.ofNullable(userEntity)
-                    .filter(userE ->
-                               passwordEncoder.matches(userE.getPassword(), userObject.get().getPassword()))
-                    .map(userE -> {
-                        String jwtToken = jwtTokenUtils.makeToken(userObject.get().getUserId());
+                    // JWT 토큰 생성
+                    String jwtToken = jwtTokenUtils.makeToken(userObject.getUserId());
+                    System.out.println(jwtToken);
+                    return Mono.just(ResponseEntity.ok().body(jwtToken));
 
-                        System.out.println("token    : " + jwtToken);   //TODO DEL
-
-                        return ResponseEntity.ok().body(jwtToken);
-                    })
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잘못된 인증"));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("ERROR");
-        }
+                })
+                .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found User...")))
+                .onErrorResume(e -> {  //ERR
+                    e.printStackTrace();
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("ERROR"));
+                });
     }
+
+    @GetMapping("/api/isAuthenticated/jwt")
+    public Mono<ResponseEntity<String>> isAuthenticatedOfCookieInJWT(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
+
+
+        return Mono.just(ResponseEntity.ok("Authenticated"));
+    }
+
 
     /**
      * 회원가입 처리 메서드(운영자만 사용)
@@ -65,9 +72,9 @@ public class LoginController {
     @PostMapping("/api/auth/secret/signup")
     public ResponseEntity<?> signUp(@RequestBody UserEntity userEntity) {
         //TODO To admin
-        Optional<UserEntity> existingUser = userRepository.findByUserId(userEntity.getUserId());
+        Mono<UserEntity> existingUser = userRepository.findByUserId(userEntity.getUserId());
 
-        if(existingUser.isPresent()) {
+        if(true) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("InValid UserId");
         }
         //나만 쓸껀데 검증이 필요할까.?

@@ -1,25 +1,23 @@
 package com.yikim.centralRestApi.utils.security;
 
 import com.yikim.centralRestApi.utils.security.jwt.JwtAuthFilter;
-import com.yikim.centralRestApi.utils.security.jwt.JwtTokenUtils;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.yikim.centralRestApi.utils.security.jwt.JwtTokenUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 /**
- * Spring Security 의 설정 클래스
+ * Spring WebFluxSecurity 의 설정 클래스
  *
  * 1.CSRF 비활성화.
  * 2.jwt 사용
@@ -28,41 +26,68 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * @Version : 0.9
  * @Since   : 2024-09-23
  * @Author  : 김영일
+ *
+ * @Modified : 2024-11-11 - WebFlux 버전으로 변경
  */
 @Configuration
-@EnableWebSecurity
+@EnableWebFluxSecurity
 public class SecurityConfig {
-    @Autowired JwtTokenUtils jwtTokenUtils;
+    private JwtAuthFilter jwtAuthFilter;
 
-    @Bean
-    protected SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .csrf((value) -> value.disable())
-                .cors(Customizer.withDefaults())
-                .authorizeRequests(req -> req
-                            .requestMatchers("/login", "/api/auth/login-process").permitAll()
-                            .anyRequest().authenticated()
-                            .and())
-                .addFilterBefore(new JwtAuthFilter(jwtTokenUtils), UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement((session) ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        return httpSecurity.build();
+    public SecurityConfig(JwtTokenUtils jwtTokenUtils) {
+        this.jwtAuthFilter = new JwtAuthFilter(jwtTokenUtils); // JwtAuthFilter 생성
     }
 
+    /**
+     * 기본적으로 WebFlux 보안 설정을 위함.
+     * 경로 인증 / jwt 인증 처리
+     *
+     * 1. CSRF 보호 비활성화 (REST API 특성 상 비활성화)  왜??
+     * 2. CORS 설정 기본값으로 설정
+     * 3. 미인증 접근허용 경로 설정
+     * 4. jwt 필터링을 이용하여 jwt 검증처리.
+     *
+     * @param httpSecurity : 보안 설정을 위한 HTTP(req/res) 객체
+     * @return 필터체인 객체
+     */
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    protected SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity) {
+        return httpSecurity
+                .csrf((value) -> value.disable())
+
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(HttpMethod.OPTIONS).permitAll()
+                        .pathMatchers("/login", "/api/auth/login-process", "/data/connect").permitAll()
+                        .anyExchange().authenticated()
+                )
+                .addFilterBefore(jwtAuthFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .build();
+    }
+
+    /**
+     * CORS 설정
+     *
+     * @return CorsWebFilter : CORS 설정 필터
+     */
+    @Bean
+    public CorsWebFilter corsWebFilter() {                 //TODO CHANGE ADDRESS
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("*"); // 필요한 도메인으로 변경 가능
+        config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        return source;
+
+        return new CorsWebFilter(request -> config);
     }
 
+    /**
+     * 패스워드 인코더 설정
+     * BCrypt 사용 -> 솔트값 기본값으로
+     * @return PasswordEncoder : 인코더
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
