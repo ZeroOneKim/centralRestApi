@@ -1,5 +1,12 @@
+#--- Database Information ----
 spring.r2dbc.url=r2dbc:mysql://[IP]:[Port]/[Database]?serverTimezone=Asia/Seoul
 spring.r2dbc.username=[ID]
 spring.r2dbc.password=[Password]
 spring.r2dbc.driver=mysql
 
+server.port=[Port]
+#--- SSL Certificate ---
+server.ssl.key-store=classpath:[INFO]
+server.ssl.key-store-password=[INFO]
+server.ssl.key-store-type=[INFO]
+server.ssl.key-alias=[INFO]
