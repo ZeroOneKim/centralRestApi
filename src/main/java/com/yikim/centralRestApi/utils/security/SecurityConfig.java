@@ -54,7 +54,6 @@ public class SecurityConfig {
     protected SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity httpSecurity) {
         return httpSecurity
                 .csrf((value) -> value.disable())
-
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()
                         .pathMatchers("/login", "/api/auth/login-process", "/data/connect").permitAll()
@@ -73,7 +72,8 @@ public class SecurityConfig {
     public CorsWebFilter corsWebFilter() {                 //TODO CHANGE ADDRESS
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("https://localhost:3000");
+        //config.addAllowedOrigin("https://www.yi97-cloud.com");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
