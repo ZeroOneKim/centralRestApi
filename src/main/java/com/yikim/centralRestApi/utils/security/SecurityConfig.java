@@ -73,7 +73,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("https://localhost:3000");
-        config.addAllowedOrigin("https://192.168.0.4");
+        config.addAllowedOrigin("https://192.168.0.4:3000");
         //config.addAllowedOrigin("https://www.yi97-cloud.com");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
