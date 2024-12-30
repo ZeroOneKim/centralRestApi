@@ -74,7 +74,12 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.addAllowedOrigin("https://localhost:3000");
         config.addAllowedOrigin("https://192.168.0.4:3000");
-        //config.addAllowedOrigin("https://www.yi97-cloud.com");
+        config.addAllowedOrigin("https://192.168.55.59:3000");
+        config.addAllowedOrigin("https://58.122.80.147:3000");
+        config.addAllowedOrigin("https://www.yi97-cloud.com");
+        config.addAllowedOrigin("https://www.yi97-cloud.com:3000");
+
+
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
