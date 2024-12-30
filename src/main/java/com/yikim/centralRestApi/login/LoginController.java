@@ -2,15 +2,12 @@ package com.yikim.centralRestApi.login;
 
 import com.yikim.centralRestApi.utils.security.jwt.JwtTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.server.Cookie;
 import org.springframework.http.*;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 /**
  * 로그인 인증처리
@@ -34,7 +31,7 @@ public class LoginController {
      * @return jwt 토큰
      */
     @PostMapping("/api/auth/login-process")
-    public Mono<ResponseEntity<String>> login(@RequestBody UserEntity userEntity) {
+    public Mono<ResponseEntity<?>> login(@RequestBody UserEntity userEntity) {
         return userRepository.findByUserId(userEntity.getUserId())
                 .flatMap(userObject -> {
                     // 패스워드 일치 여부 확인
@@ -44,8 +41,18 @@ public class LoginController {
 
                     // JWT 토큰 생성
                     String jwtToken = jwtTokenUtils.makeToken(userObject.getUserId());
-                    System.out.println(jwtToken);
-                    return Mono.just(ResponseEntity.ok().body(jwtToken));
+                    ResponseCookie jwtCookie = ResponseCookie.from("yi-jwt", jwtToken)
+                            .httpOnly(true)
+                            .secure(true) // HTTPS
+                            .path("/")
+                            .maxAge(10) // 쿠키 유효 시간
+                            .sameSite("Strict") // SameSite 설정 (Strict 또는 Lax) WILL..
+                            .build();
+
+                    return Mono.just(ResponseEntity.ok()
+                            .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                            .build());
+                    //return Mono.just(ResponseEntity.ok().body(jwtToken));
 
                 })
                 .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found User...")))
@@ -56,9 +63,8 @@ public class LoginController {
     }
 
     @GetMapping("/api/isAuthenticated/jwt")
-    public Mono<ResponseEntity<String>> isAuthenticatedOfCookieInJWT(@RequestHeader(HttpHeaders.AUTHORIZATION) String authorization) {
-
-
+    public Mono<ResponseEntity<String>> isAuthenticatedOfCookieInJWT(@CookieValue("yi-jwt") String jwtToken) {
+        //TODO WILL..
         return Mono.just(ResponseEntity.ok("Authenticated"));
     }
 
