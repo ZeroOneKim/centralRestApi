@@ -76,7 +76,8 @@ public class SecurityConfig {
         config.addAllowedOrigin("https://192.168.0.4");
         config.addAllowedOrigin("https://www.yi97-cloud.com");
         config.addAllowedOrigin("https://yi97-cloud.com");
-
+        config.addAllowedOrigin("https://yi97-cloud.com:3000");
+        config.addAllowedOrigin("https://yi97-cloud.com:443");
 
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
