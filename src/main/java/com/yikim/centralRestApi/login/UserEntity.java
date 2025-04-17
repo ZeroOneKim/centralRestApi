@@ -1,6 +1,8 @@
 package com.yikim.centralRestApi.login;
 
 
+import org.springframework.data.relational.core.mapping.Column;
+
 import java.time.LocalDateTime;
 
 public class UserEntity {
@@ -8,6 +10,7 @@ public class UserEntity {
     private String email;
     private String role;
     private String password;
+    @Column("rgst_dt")
     private LocalDateTime createdAt;
     private String accountStatus;
     private int failedCnt;
