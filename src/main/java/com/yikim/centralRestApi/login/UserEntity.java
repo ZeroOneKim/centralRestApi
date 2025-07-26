@@ -1,11 +1,14 @@
 package com.yikim.centralRestApi.login;
 
 
+import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 
 import java.time.LocalDateTime;
 
 public class UserEntity {
+    @Id
+    @Column("USER_ID")
     private String userId;
     private String email;
     private String role;
@@ -19,7 +22,7 @@ public class UserEntity {
     public String getUserId() {
         return userId;
     }
-    public void setUser_id(String userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
