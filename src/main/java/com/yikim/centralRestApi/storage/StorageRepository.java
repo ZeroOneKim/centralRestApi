@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 
 @Repository
-public interface StroageRepository extends ReactiveCrudRepository<StorageUsageEntity, String> {
+public interface StorageRepository extends ReactiveCrudRepository<StorageUsageEntity, String> {
 
     Flux<StorageUsageEntity> findByUserId(String userId);
 }
