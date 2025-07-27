@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -13,8 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -28,32 +29,41 @@ import java.util.stream.Stream;
 @Service
 public class StorageService {
     @Autowired JwtTokenUtils jwtTokenUtils;
+    @Autowired StorageInfoRepository storageInfoRepository;
     @Autowired StorageRepository storageRepository;
     @Autowired SecurityInfo securityInfo;
 
-
-
-
+    public Long fileSize;
     /**
      * 현재 사용되고 있는 용량에 정보에 대한 업데이트
      * @param jwtToken
      * @return void(저장처리)
      */
-    public Mono<Void> modifyUsedStorageAmount(String jwtToken) {
+    public Mono<Void> modifyUsedStorageAmount(String fileName, String jwtToken) {
         String userId     = jwtTokenUtils.extractUser(jwtToken);
         String targetPath = securityInfo.getBaseStorageDir();
 
         return nowFolderSize(targetPath) // userId를 nowFolderSize로 전달하도록 변경 필요 (아래 nowFolderSize 리뷰 참고)
-                .flatMap(currentFolderSizeMb -> {
-                     storageRepository.findByUserId(userId)
-                          .single()
-                          .flatMap(entity -> {
-                              entity.setStorageUseMb(currentFolderSizeMb);
-                              entity.setUpdDt(LocalDateTime.now());
+                .flatMap(currentFolderSize -> storageRepository.findByUserId(userId)
+                     .single()
+                     .flatMap(entity -> {
+                         entity.setStorageUseMb(currentFolderSize/1024/1024);
+                         entity.setUpdDt(LocalDateTime.now());
 
-                              return storageRepository.save(entity);
-                          }).then();
-                    return Mono.empty(); // 업데이트 완료 후 Mono<Void> 반환
+                         return storageRepository.save(entity);
+                     }).thenReturn(currentFolderSize))
+
+                .flatMap(saveStoreInfo -> {
+                    StorageInfoEntity newEntity = new StorageInfoEntity();
+                    newEntity.setUserId(userId);
+                    newEntity.setFileName(fileName);
+                    newEntity.setFileSize(fileSize);
+                    newEntity.setRgstDt(LocalDateTime.now());
+
+                    return storageInfoRepository.deleteByIdAndFileName(userId, fileName)
+                            .onErrorResume(e -> Mono.empty())
+                            .then(storageInfoRepository.save(newEntity))
+                            .then();
                 })
                 .doOnError(e -> {
                     // 폴더 크기 계산이나 DB 업데이트 중 에러 발생 시 처리
@@ -62,11 +72,7 @@ public class StorageService {
                 .then(); // 최종적으로 Mono<Void>를 반환하도록 합니다.
     }
 
-
-
-
-
-
+    //TODO GET FILE INFO and view
 
 
 
@@ -94,14 +100,37 @@ public class StorageService {
                     .map(storageEntity -> {
                         int maxStorage = storageEntity.getMaxStorageMb();
                         int usedStorage = storageEntity.getStorageUseMb();
-                        int newSizeMB = (size.get()/1024/1024 == 0) ? 0 : 1;
+                        int newSizeMB = (size.get()/1024/1024 == 0) ? 1 : size.get()/1024/1024;
 
                         if(usedStorage+newSizeMB > maxStorage) return false;
+                        fileSize = Long.valueOf(size.get());
+
                         return true;
                     }).switchIfEmpty(Mono.error(new Exception("Not found user")))
                 );
     }
 
+    //TODO review
+    public Mono<Void> uploadFile(List<FilePart> file, String jwtToken) {
+        String userId = jwtTokenUtils.extractUser(jwtToken);
+        Path userDir = Paths.get(securityInfo.getBaseStorageDir(), userId);
+
+        Mono<Void> ensureDir = Mono.fromRunnable(() -> {
+            try {
+                Files.createDirectories(userDir);
+            } catch (IOException exception) {
+                throw new RuntimeException("업로드 폴더 생성 실패하였음.");
+            }
+        }).subscribeOn(Schedulers.boundedElastic()).then();
+
+        Flux<Void> saveFiles = Flux.fromIterable(file)
+                .flatMap(filePart -> {
+                    Path destination = userDir.resolve(filePart.filename());
+                    return filePart.transferTo(destination);
+                });
+
+        return ensureDir.thenMany(saveFiles).then();
+    }
 
     //TODO Review
     public Mono<Integer> nowFolderSize(String targetPath) {
@@ -121,7 +150,7 @@ public class StorageService {
                         })
                         .sum();
             }
-            return (int) (totalBytes / (1024 * 1024)); // MB 단위 변환
+            return (int) (totalBytes);
         }).subscribeOn(Schedulers.boundedElastic());
     }
 }
