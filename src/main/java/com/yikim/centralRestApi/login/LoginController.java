@@ -1,29 +1,30 @@
 package com.yikim.centralRestApi.login;
 
+import com.yikim.centralRestApi.logging.AccessLogService;
 import com.yikim.centralRestApi.utils.security.jwt.JwtTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-
 /**
- * 로그인 인증처리
+ * 로그인 및 사용자 인증처리
  *
- * @Version : 0.9
- * @Since : 2024-10-07
+ * @Version : 0.91
+ * @Since  : 2024-10-07
  * @Author : 김영일
  *
  * @Modified : 2024-11-20 - WebFlux 버전으로 변경
+ *           : 2025-04-18 - 기존 로그인 기능만 구현했던 기능에 이어서 개발 예정... 접근 로깅처리 기능 추가
  */
 @RestController
 public class LoginController {
     @Autowired UserRepository userRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtTokenUtils jwtTokenUtils;
-
+    @Autowired AccessLogService accessLogService;
     /**
      * login 인증 프로세스
      *
@@ -31,11 +32,12 @@ public class LoginController {
      * @return jwt 토큰
      */
     @PostMapping("/api/auth/login-process")
-    public Mono<ResponseEntity<?>> login(@RequestBody UserEntity userEntity) {
+    public Mono<ResponseEntity<?>> login(@RequestBody UserEntity userEntity, ServerHttpRequest request) {
         return userRepository.findByUserId(userEntity.getUserId())
                 .flatMap(userObject -> {
                     // 패스워드 일치 여부 확인
                     if (!passwordEncoder.matches(userEntity.getPassword(), userObject.getPassword())) {
+                        accessLogService.accessLog(userEntity.getUserId(), accessLogService.getClientIp(request), "Login", "FAIL");
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잘못된 인증"));
                     }
 
@@ -45,19 +47,24 @@ public class LoginController {
                             .httpOnly(true)
                             .secure(true) // HTTPS
                             .path("/")
-                            .maxAge(10) // 쿠키 유효 시간
+                            .maxAge(3600) // 쿠키 유효 시간
                             .sameSite("Strict") // SameSite 설정 (Strict 또는 Lax) WILL..
                             .build();
 
+                    accessLogService.accessLog(userEntity.getUserId(), accessLogService.getClientIp(request), "Login", "Success");
                     return Mono.just(ResponseEntity.ok()
                             .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
                             .build());
                     //return Mono.just(ResponseEntity.ok().body(jwtToken));
-
                 })
-                .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found User...")))
-                .onErrorResume(e -> {  //ERR
+                .switchIfEmpty(
+                    Mono.defer(() -> {
+                        accessLogService.accessLog(userEntity.getUserId(), accessLogService.getClientIp(request), "Login", "Not Found User");
+                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not Found User..."));
+                    })
+                ).onErrorResume(e -> {  //ERR
                     e.printStackTrace();
+                    accessLogService.accessLog(userEntity.getUserId(), accessLogService.getClientIp(request), "Login", "ERROR");
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("ERROR"));
                 });
     }
@@ -77,7 +84,7 @@ public class LoginController {
      */
     @PostMapping("/api/auth/secret/signup")
     public ResponseEntity<?> signUp(@RequestBody UserEntity userEntity) {
-        //TODO To admin
+        //TODO To Only admin
         Mono<UserEntity> existingUser = userRepository.findByUserId(userEntity.getUserId());
 
         if(true) {
@@ -86,7 +93,6 @@ public class LoginController {
         //나만 쓸껀데 검증이 필요할까.?
         try {
             userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
-            userEntity.setCreateAt(LocalDateTime.now());
 
             userRepository.save(userEntity);
             return ResponseEntity.ok().body("OK.");
