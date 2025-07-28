@@ -3,10 +3,7 @@ package com.yikim.centralRestApi.storage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -16,6 +13,12 @@ import reactor.core.publisher.Mono;
 @RestController
 public class StorageController {
     @Autowired StorageService storageService;
+
+
+    @GetMapping("/api/storage/getFileInfo")
+    public Flux<StorageInfoEntity> getUserFiles(@CookieValue("yi-jwt") String jwtToken) {
+        return storageService.getFilesInfoOfUser(jwtToken);
+    }
 
     @PostMapping("/api/storage/doUpload")
     public Mono<ResponseEntity<String>> doUploadFileToStorage(@RequestPart("files") Flux<FilePart> upLoadFileData

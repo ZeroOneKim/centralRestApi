@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -34,6 +35,13 @@ public class StorageService {
     @Autowired SecurityInfo securityInfo;
 
     public Long fileSize;
+
+
+    public Flux<StorageInfoEntity> getFilesInfoOfUser(String jwtToken) {
+        String userId = jwtTokenUtils.extractUser(jwtToken);
+        return storageInfoRepository.findByUserIdOrderByRgstDtDesc(userId);
+    }
+
     /**
      * 현재 사용되고 있는 용량에 정보에 대한 업데이트
      * @param jwtToken
