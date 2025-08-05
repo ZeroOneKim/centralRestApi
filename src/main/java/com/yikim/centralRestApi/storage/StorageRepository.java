@@ -8,4 +8,6 @@ import reactor.core.publisher.Flux;
 public interface StorageRepository extends ReactiveCrudRepository<StorageUsageEntity, String> {
 
     Flux<StorageUsageEntity> findByUserId(String userId);
+
+
 }
